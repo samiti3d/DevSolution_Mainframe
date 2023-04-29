@@ -20,6 +20,16 @@ namespace WebView2
             InitializeComponent();
             this.Resize += new System.EventHandler(this.Form_Resize);
 
+            webView21.NavigationStarting += EnsureHttps;
+
+            //missing InitializeAsync(); but moving to Form1_Load
+
+        }
+
+        private void Form1_Load(object sender, EventArgs e)
+        {
+            InitBrowser();
+
         }
 
         void EnsureHttps(object sender, CoreWebView2NavigationStartingEventArgs args)
@@ -27,6 +37,7 @@ namespace WebView2
             String uri = args.Uri;
             if (!uri.StartsWith("https://"))
             {
+                webView21.CoreWebView2.ExecuteScriptAsync($"alert('{uri} is not safe, try an https link')");
                 args.Cancel = true;
             }
         }
@@ -43,21 +54,38 @@ namespace WebView2
 
         }
 
-        private async Task initizated()
+        private async Task InitializeAsync()
         {
-            //checking webview
             await webView21.EnsureCoreWebView2Async(null);
         }
 
         public async void InitBrowser()
         {
-            await initizated();
-            webView21.CoreWebView2.Navigate("https://www.google.com");
+            await InitializeAsync();
+            //webView21.CoreWebView2.Navigate("https://www.google.com");
+            webView21.CoreWebView2.WebMessageReceived += UpdateAddressBar;
+
+            await webView21.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync("window.chrome.webview.postMessage(window.document.URL);");
+            await webView21.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync("window.chrome.webview.addEventListener(\'message\', event => alert(event.data));");
         }
 
-        private void Form1_Load(object sender, EventArgs e)
+        void UpdateAddressBar(object sender, CoreWebView2WebMessageReceivedEventArgs args)
         {
-            InitBrowser();
+            String uri = args.TryGetWebMessageAsString();
+            addressBar.Text = uri;
+            webView21.CoreWebView2.PostWebMessageAsString(uri);
+        }
+
+        private void goButton_Click(object sender, EventArgs e)
+        {
+            Console.WriteLine("GO BUTTON");
+
+            if (webView21 != null && webView21.CoreWebView2 != null)
+            {
+                Console.WriteLine("Process 2");
+                webView21.CoreWebView2.Navigate(addressBar.Text);
+
+            }
         }
     }
 }
