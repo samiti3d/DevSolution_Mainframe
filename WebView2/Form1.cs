@@ -19,16 +19,13 @@ namespace WebView2
         {
             InitializeComponent();
             this.Resize += new System.EventHandler(this.Form_Resize);
-
             webView21.NavigationStarting += EnsureHttps;
-
-            //missing InitializeAsync(); but moving to Form1_Load
-
+            InitializeAsync();
         }
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            InitBrowser();
+            //InitBrowser();
 
         }
 
@@ -54,25 +51,25 @@ namespace WebView2
 
         }
 
-        private async Task InitializeAsync()
+        private async void InitializeAsync()
         {
             await webView21.EnsureCoreWebView2Async(null);
-        }
-
-        public async void InitBrowser()
-        {
-            await InitializeAsync();
-            //webView21.CoreWebView2.Navigate("https://www.google.com");
             webView21.CoreWebView2.WebMessageReceived += UpdateAddressBar;
 
             await webView21.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync("window.chrome.webview.postMessage(window.document.URL);");
             await webView21.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync("window.chrome.webview.addEventListener(\'message\', event => alert(event.data));");
         }
 
+        public async void InitBrowser()
+        {
+            //webView21.CoreWebView2.Navigate("https://www.google.com");
+        }
+
         void UpdateAddressBar(object sender, CoreWebView2WebMessageReceivedEventArgs args)
         {
             String uri = args.TryGetWebMessageAsString();
             addressBar.Text = uri;
+            Console.WriteLine("URI: " +  uri );
             webView21.CoreWebView2.PostWebMessageAsString(uri);
         }
 
